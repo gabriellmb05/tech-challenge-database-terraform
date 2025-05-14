@@ -9,4 +9,13 @@ resource "aws_db_instance" "tech-challenge-postgres" {
   username            = var.username
   password            = var.password
   skip_final_snapshot = true
+
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
+  db_subnet_group_name = aws_db_subnet_group.postgres-subnet-group.name
+
+}
+
+resource "aws_db_subnet_group" "postgres-subnet-group" {
+  name = "postgres-subnet-group"
+  subnet_ids = [aws_subnet.private-us-east-1a.id, aws_subnet.private-us-east-1b.id]
 }
