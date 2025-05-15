@@ -5,6 +5,7 @@ on:
     branches:
       - main
 
+      
 jobs:
   terraform:
     uses: gabriellmb05/terraform-ci/.github/workflows/terraform.yaml@main
