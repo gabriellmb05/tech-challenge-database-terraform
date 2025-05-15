@@ -14,3 +14,7 @@ variable "db_name" {
 variable "instance_size" {
   type = string
 }
+
+variable "environment" {
+  type = string
+}
