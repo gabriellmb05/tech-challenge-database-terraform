@@ -1,74 +1,16 @@
+name: Apply Terraform
+
 on:
   push:
     branches:
       - main
-env:
-  environment: prod
-  aws-region: "us-east-1"
-  aws-statefile-s3-bucket: "gabriellmb05-us-east-1-terraform-db-statefile"
-  aws-lock-dynamodb-table: "gabriellmb05-us-east-1-terraform-db-lock"
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    env:
-      TF_VAR_password: ${{ secrets.TF_VAR_PASSWORD }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.8.3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.aws_assume_role_arn }}
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
-          aws-region: ${{ env.aws-region }}
-
-      - name: Read destroy configuration
-        id: read-destroy-config
-        run: |
-          DESTROY="$(jq -r '.${{ env.environment }}' ./infra/destroy_config.json)"
-          echo "destroy=$(echo $DESTROY)" >> $GITHUB_OUTPUT
-
-      - name: Terraform Init
-        run: |
-          cd infra && terraform init \
-            -backend-config="bucket=${{ env.aws-statefile-s3-bucket }}" \
-            -backend-config="key=${{ github.event.repository.name }}" \
-            -backend-config="region=${{ env.aws-region }}" \
-            -backend-config="dynamodb_table=${{ env.aws-lock-dynamodb-table }}"
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Destroy
-        if: steps.read-destroy-config.outputs.destroy == 'true'
-        id: terraform-destroy
-        run: cd infra &&
-          terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }} &&
-          terraform destroy -var-file="./envs/${{ env.environment }}/terraform.tfvars" -auto-approve
-
-      - name: Terraform Plan
-        if: steps.read-destroy-config.outputs.destroy != 'true'
-        id: terraform-plan
-        run: cd infra &&
-          terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }} &&
-          terraform plan -var-file="./envs/${{ env.environment }}/terraform.tfvars" -out="${{ env.environment }}.plan"
-
-      - name: Terraform Apply
-        if: steps.read-destroy-config.outputs.destroy != 'true'
-        id: terraform-apply
-        run: cd infra &&
-          terraform workspace select ${{ env.environment }} || terraform workspace new ${{ env.environment }} &&
-          terraform apply "${{ env.environment }}.plan"
+    uses: gabriellmb05/terraform-ci/.github/workflows/terraform.yaml@main
+    with:
+      working_directory: infra
+      environment: prod
+    secrets:
+      TF_VAR_PASSWORD: ${{ secrets.TF_VAR_PASSWORD }}
+      aws_assume_role_arn: ${{ secrets.aws_assume_role_arn }}

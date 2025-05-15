@@ -17,5 +17,6 @@ resource "aws_db_instance" "tech-challenge-postgres" {
 
 resource "aws_db_subnet_group" "postgres-subnet-group" {
   name = "postgres-subnet-group"
-  subnet_ids = [aws_subnet.private-us-east-1a.id, aws_subnet.private-us-east-1b.id]
+  subnet_ids = [data.terraform_remote_state.vpc.outputs.private_subnet_east_1a_id, data.terraform_remote_state.vpc.outputs.private_subnet_east_1b_id]
 }
+
