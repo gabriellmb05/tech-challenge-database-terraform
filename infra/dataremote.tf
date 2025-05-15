@@ -3,8 +3,7 @@ data "terraform_remote_state" "vpc" {
 
   config = {
     bucket = "terraform-chanllenge-tf"
-    key    = "state/terraform.tfstate"
+    key    = "env:/${var.environment}/state/terraform.tfstate"
     region = "us-east-1"
-    workspace_key_prefix = var.environment
   }
 }
